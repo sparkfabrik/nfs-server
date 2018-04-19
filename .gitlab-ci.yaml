@@ -1,0 +1,23 @@
+image: sparkfabrik/spark-k8s-deployer:helm
+
+services:
+  - docker:17-dind
+
+stages:
+  - build
+
+before_script:
+  - docker login -u oauth2accesstoken -p "$(gcloud auth print-access-token)" https://gcr.io
+
+variables:
+  DOCKER_DRIVER: overlay2
+  DOCKER_HOST: tcp://localhost:2375
+  CI_REGISTRY_IMAGE: gcr.io/spark-int-cloud-services/nfs-server
+
+build:
+  stage: build
+  script:
+    - docker build -t "${CI_REGISTRY_IMAGE}:${CI_BUILD_REF_SLUG}" .
+    - gcloud docker -- push "${CI_REGISTRY_IMAGE}:${CI_BUILD_REF_SLUG}"
+  only:
+    - master
